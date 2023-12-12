@@ -1,4 +1,4 @@
-package com.tima.platform.resource;
+package com.tima.platform.resource.signin;
 
 import com.tima.platform.model.api.request.signin.SignInRequest;
 import com.tima.platform.service.SignInService;

@@ -21,6 +21,7 @@ import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -28,6 +29,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
+import static com.tima.platform.model.security.TimaAuthority.ADMIN_BRAND_INFLUENCER;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -141,6 +143,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 );
     }
 
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
     public Mono<AppResponse> changePassword(String publicId, PasswordRestRecord restRecord){
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> {
@@ -163,6 +166,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
     }
 
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
     public Mono<AppResponse> deActivateUser(String publicId){
         return userRepository.findByPublicId(publicId)
                 .flatMap( user ->  {

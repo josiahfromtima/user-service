@@ -49,7 +49,10 @@ public class ResourceServer {
             "/v1/profile/brand",
             "/v1/profile/influencer",
             "/v1/profile/types",
-            "/v1/auth/new",
+            "/v1/signed/**",
+            "/v1/countries",
+            "/v1/countries/name/**",
+            "/v1/address",
             "/v1/captcha/**"
             // other public endpoints of your API may be appended to this array
     };

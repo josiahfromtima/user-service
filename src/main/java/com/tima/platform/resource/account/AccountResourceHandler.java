@@ -1,4 +1,4 @@
-package com.tima.platform.resource;
+package com.tima.platform.resource.account;
 
 import com.tima.platform.config.AuthTokenConfig;
 import com.tima.platform.model.api.request.PasswordRestRecord;
@@ -201,6 +201,35 @@ public class AccountResourceHandler {
         try {
             return jwtAuthToken.map(this::getPublicIdFromToken)
                     .flatMap(signUpService::deActivateUser)
+                    .flatMap(ServerResponse.ok()::bodyValue)
+                    .switchIfEmpty(ServerResponse.badRequest().build());
+        } catch (Exception e) {
+            return ServerResponse.badRequest().build();
+        }
+    }
+
+    public Mono<ServerResponse> updateProfilePicture(ServerRequest request)  {
+        String pictureName = request.pathVariable("pictureName");
+        Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
+        log.info("[{}] Update User Account Profile Picture Requested", request.remoteAddress().orElse(null));
+
+        try {
+            return jwtAuthToken.map(this::getPublicIdFromToken)
+                    .flatMap(publicId -> userProfileService.updateProfilePicture(publicId, pictureName) )
+                    .flatMap(ServerResponse.ok()::bodyValue)
+                    .switchIfEmpty(ServerResponse.badRequest().build());
+        } catch (Exception e) {
+            return ServerResponse.badRequest().build();
+        }
+    }
+    public Mono<ServerResponse> updateUserDocument(ServerRequest request)  {
+        String pictureName = request.pathVariable("documentName");
+        Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
+        log.info("[{}] Update User Account Document Requested", request.remoteAddress().orElse(null));
+
+        try {
+            return jwtAuthToken.map(this::getPublicIdFromToken)
+                    .flatMap(publicId -> userProfileService.updateDocument(publicId, pictureName) )
                     .flatMap(ServerResponse.ok()::bodyValue)
                     .switchIfEmpty(ServerResponse.badRequest().build());
         } catch (Exception e) {

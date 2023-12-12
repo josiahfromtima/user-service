@@ -1,4 +1,4 @@
-package com.tima.platform.resource;
+package com.tima.platform.resource.account;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +31,8 @@ public class AccountResourceConfig {
     public static final String VERIFY_OTP = USER_ACCOUNT + "/verify/{otp}";
     public static final String RESEND_OTP = USER_ACCOUNT + "/otp/resend";
     public static final String DE_ACTIVATE_USER = USER_ACCOUNT + "/deactivate";
+    public static final String UPDATE_PROFILE_PICS = USER_PROFILE + "/picture/{pictureName}";
+    public static final String UPDATE_DOCUMENT = USER_PROFILE + "/document/{documentName}";
 
     @Bean
     public RouterFunction<ServerResponse> profileEndpointHandler(AccountResourceHandler handler) {
@@ -50,6 +52,8 @@ public class AccountResourceConfig {
                 .PUT(UPDATE_INFLUENCER_ACCOUNT, accept(MediaType.APPLICATION_JSON), handler::updateInfluenceProfile)
                 .PUT(UPDATE_USER_PASSWORD, accept(MediaType.APPLICATION_JSON), handler::updatePassword)
                 .PUT(UPDATE_PUBLIC_USER_PASSWORD, accept(MediaType.APPLICATION_JSON), handler::updatePublicPassword)
+                .PUT(UPDATE_PROFILE_PICS, accept(MediaType.APPLICATION_JSON), handler::updateProfilePicture)
+                .PUT(UPDATE_DOCUMENT, accept(MediaType.APPLICATION_JSON), handler::updateUserDocument)
                 .build();
     }
 }

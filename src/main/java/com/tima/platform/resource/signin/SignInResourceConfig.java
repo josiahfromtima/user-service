@@ -1,4 +1,4 @@
-package com.tima.platform.resource;
+package com.tima.platform.resource.signin;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

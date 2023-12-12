@@ -52,23 +52,23 @@ public class ApiErrorAdvice extends AbstractErrorWebExceptionHandler {
     }
 
     private Mono<ServerResponse> buildResponse(Map<String, Object> errorAttr) {
-        switch (Integer.parseInt(getAsString("status", errorAttr, "500"))) {
-            case 400: return ServerResponse.badRequest()
+        return switch (Integer.parseInt(getAsString("status", errorAttr, "500"))) {
+            case 400 -> ServerResponse.badRequest()
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(getException(message("error.code.400"), errorAttr));
-            case 401: return ServerResponse.status(HttpStatus.UNAUTHORIZED)
+            case 401 -> ServerResponse.status(HttpStatus.UNAUTHORIZED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(getException(message("error.code.401"), errorAttr));
-            case 403: return ServerResponse.status(HttpStatus.FORBIDDEN)
+            case 403 -> ServerResponse.status(HttpStatus.FORBIDDEN)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(getException(message("error.code.403"), errorAttr));
-            case 404: return ServerResponse.status(HttpStatus.NOT_FOUND)
+            case 404 -> ServerResponse.status(HttpStatus.NOT_FOUND)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(getException(message("error.code.404"), errorAttr));
-            default: return ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            default -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(getException(message("error.code.500"), errorAttr));
-        }
+        };
     }
 
     private String message(String s) {

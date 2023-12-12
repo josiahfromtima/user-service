@@ -5,7 +5,6 @@ import com.tima.platform.domain.User;
 import com.tima.platform.domain.UserProfile;
 import com.tima.platform.exception.AppException;
 import com.tima.platform.model.api.AppResponse;
-import com.tima.platform.model.api.request.PasswordRestRecord;
 import com.tima.platform.model.api.request.UserInfluencerRecord;
 import com.tima.platform.model.api.request.UserProfileRecord;
 import com.tima.platform.model.api.request.signin.UserBrandRecord;
@@ -16,13 +15,15 @@ import com.tima.platform.repository.UserProfileRepository;
 import com.tima.platform.repository.UserRepository;
 import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
+import static com.tima.platform.model.security.TimaAuthority.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 /**
@@ -35,12 +36,21 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 public class UserProfileService {
     private final UserRepository userRepository;
     private final UserProfileRepository profileRepository;
-    private final PasswordEncoder passwordEncoder;
+
+    @Value("${aws.s3.url}")
+    private String baseResourceUrl;
+    @Value("${aws.s3.resource.profile}")
+    private String profileFolder;
+    @Value("${aws.s3.resource.document}")
+    private String documentFolder;
+    @Value("${aws.s3.image-ext}")
+    private String defaultFileExtension;
 
     private static final String INVALID_USER = "Unauthorized User Action";
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
 
+    @PreAuthorize(ADMIN_INFLUENCER)
     public Mono<AppResponse> createUserProfile(UserInfluencerRecord userProfile) {
         return checkUserExistence(userProfile.publicId())
                 .flatMap(user -> profileRepository.save(UserProfileConverter
@@ -60,6 +70,7 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
+    @PreAuthorize(ADMIN_BRAND)
     public Mono<AppResponse> createUserProfile(UserBrandRecord userProfile) {
         return checkUserExistence(userProfile.publicId())
                 .flatMap(user -> profileRepository.save(UserProfileConverter
@@ -78,6 +89,7 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
+    @PreAuthorize(BRAND)
     public Mono<AppResponse> updateProfile(String publicId, UserBrandRecord userRecord) {
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
@@ -93,6 +105,7 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
+    @PreAuthorize(INFLUENCER)
     public Mono<AppResponse> updateProfile(String publicId, UserInfluencerRecord userRecord) {
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
@@ -109,8 +122,8 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
     public Mono<AppResponse> getUserProfile(String publicId) {
-        System.out.println(publicId);
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
                         .map(userProfile -> FullUserProfileRecord.builder()
@@ -122,6 +135,33 @@ public class UserProfileService {
                 ).map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
+
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
+    public Mono<AppResponse> updateProfilePicture(String publicId, String pictureName) {
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> getUserProfileFromDB(user.getId()))
+                .flatMap(userProfile -> {
+                            userProfile.setProfilePicture(resourceUrl(pictureName, profileFolder));
+                            return profileRepository.save(userProfile);
+                })
+                .map(UserProfileConverter::mapToRecord)
+                .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+    }
+
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
+    public Mono<AppResponse> updateDocument(String publicId, String documentName) {
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> getUserProfileFromDB(user.getId()))
+                .flatMap(userProfile -> {
+                            userProfile.setRegisteredDocument(resourceUrl(documentName, documentFolder));
+                            return profileRepository.save(userProfile);
+                })
+                .map(UserProfileConverter::mapToRecord)
+                .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+    }
+
     private Mono<UserProfile> getUserProfileFromDB(Integer id) {
         return profileRepository.findById(getOrDefault(id));
     }
@@ -139,6 +179,17 @@ public class UserProfileService {
         return profileRepository.findById(getOrDefault(user.getId()))
                 .map(userProfile -> true)
                 .switchIfEmpty( Mono.just(false) );
+    }
+
+    private String resourceUrl(String file, String folder) {
+        return baseResourceUrl +
+                folder +
+                checkExt(file);
+    }
+
+    private String checkExt(String file) {
+        if(file.contains(".jpeg") || file.contains(".jpg") || file.contains(".png")) return file;
+        else return file + defaultFileExtension;
     }
 
     private Integer getOrDefault(Integer id) {
