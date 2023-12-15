@@ -9,13 +9,11 @@ import com.tima.platform.model.api.AppResponse;
 import com.tima.platform.model.api.request.PasswordRestRecord;
 import com.tima.platform.model.api.request.UserRecord;
 import com.tima.platform.model.api.response.NewUserRecord;
+import com.tima.platform.model.api.response.OtpRecord;
 import com.tima.platform.model.constant.UserType;
 import com.tima.platform.model.event.EmailTemplate;
 import com.tima.platform.model.event.GenericRequest;
-import com.tima.platform.repository.RoleRepository;
-import com.tima.platform.repository.UserRepository;
-import com.tima.platform.repository.UserRoleRepository;
-import com.tima.platform.repository.VerificationRepository;
+import com.tima.platform.repository.*;
 import com.tima.platform.service.template.UserSignupTemplate;
 import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +40,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 @Service
 @RequiredArgsConstructor
 public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppResponse> {
+    private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
@@ -55,6 +54,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
     private static final String INVALID_USER = "Invalid username";
+    private static final String INVALID_EMAIL = "Username/Email is not on our record";
+    private static final String DUPLICATE_ERROR = "We could not resolve the email";
 
     @Override
     protected Mono<User> createUserAccount(UserRecord accountToCreate) throws AppException {
@@ -113,14 +114,17 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                     verification.setUserOtp(null);
                     deleteOtp(verification);
                     return activateUser(verification.getUserId())
-                            .map(v -> AppUtil.buildAppResponse("Valid OTP", USER_MSG));
+                            .map(user -> AppUtil.buildAppResponse(OtpRecord.builder()
+                                    .message("Valid OTP")
+                                    .publicId(user.getPublicId())
+                                    .build(), USER_MSG));
                 })
                 .switchIfEmpty(
                         handleOnErrorResume(new AppException("Invalid OTP Entered"), BAD_REQUEST.value())
                 );
     }
 
-    public Mono<AppResponse> resendOtp(String username, String email) {
+    public Mono<AppResponse> resendOtp(String username, String email, String templateId) {
         String newOTP = AppUtil.generateOTP(6);
         return userRepository.findByUsername(username)
                 .flatMap(user -> verificationRepository.findByUserId(user.getId())
@@ -131,16 +135,52 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         })
                         .flatMap(foundUser -> emailEvent.sendMail(GenericRequest.builder()
                                         .to(email)
-                                        .templateId(activationMailTemplateId)
+                                        .templateId(templateId)
                                         .template(EmailTemplate.builder().link(email).otp(newOTP).build())
                                         .build())
-                                .map(r -> AppUtil.buildAppResponse("OTP sent to, " +
-                                        foundUser.getUsername(), USER_MSG)
+                                .map(r -> AppUtil.buildAppResponse(OtpRecord.builder()
+                                        .message("OTP sent to, " +
+                                                foundUser.getUsername())
+                                        .publicId(user.getPublicId()).build(), USER_MSG)
                                 )
                         )
                 ).switchIfEmpty(
                         handleOnErrorResume(new AppException("Username/Email is not on our record"), BAD_REQUEST.value())
                 );
+    }
+
+    public Mono<AppResponse> resendOtp(Integer userId, String email, String templateId) {
+        String newOTP = AppUtil.generateOTP(6);
+        log.info("resendOtp: {} -- {}", email, userId);
+        return userRepository.findById(userId)
+                .flatMap(user -> verificationRepository.save(Verification.builder()
+                                        .userId(user.getId())
+                                        .userOtp(newOTP)
+                                        .build() )
+                                    .map(v -> user)
+                        ).flatMap(foundUser -> emailEvent.sendMail(GenericRequest.builder()
+                                        .to(email)
+                                        .templateId(templateId)
+                                        .template(EmailTemplate.builder().link(email).otp(newOTP).build())
+                                        .build())
+                                .map(r -> AppUtil.buildAppResponse(OtpRecord.builder()
+                                        .message("OTP sent to, " +
+                                                foundUser.getUsername())
+                                        .publicId(foundUser.getPublicId())
+                                        .build(), USER_MSG)
+                                )
+                        ).onErrorResume(throwable ->
+                        handleOnErrorResume(new AppException(DUPLICATE_ERROR), BAD_REQUEST.value()) );
+    }
+
+    public Mono<AppResponse> resetPasswordRequest(String email, String templateId) {
+        log.info("resetPasswordRequest: {}", email);
+        return userProfileRepository.findByEmail(email)
+                .flatMap(userProfile -> resendOtp(userProfile.getId(), userProfile.getEmail(), templateId))
+                .switchIfEmpty(handleOnErrorResume(
+                        new AppException("No record found"), BAD_REQUEST.value()))
+                .onErrorResume(throwable -> handleOnErrorResume(
+                        new AppException(errorCheck(throwable.getLocalizedMessage())), BAD_REQUEST.value()) );
     }
 
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)
@@ -199,6 +239,12 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private String encodeSecret(String secret) {
         return Objects.isNull(secret) ? null : passwordEncoder.encode(secret);
+    }
+
+    private String errorCheck(String error) {
+        if(error.contains("400 BAD_REQUEST")) {
+            return INVALID_EMAIL;
+        } return DUPLICATE_ERROR;
     }
 
 }

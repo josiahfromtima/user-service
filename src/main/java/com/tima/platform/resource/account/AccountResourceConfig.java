@@ -28,6 +28,7 @@ public class AccountResourceConfig {
     public static final String UPDATE_INFLUENCER_ACCOUNT = USER_PROFILE + "/influencer";
     public static final String UPDATE_USER_PASSWORD = USER_ACCOUNT + "/password";
     public static final String UPDATE_PUBLIC_USER_PASSWORD = USER_ACCOUNT + "/password/update";
+    public static final String RESET_USER_PASSWORD = USER_ACCOUNT + "/password/reset/{email}";
     public static final String VERIFY_OTP = USER_ACCOUNT + "/verify/{otp}";
     public static final String RESEND_OTP = USER_ACCOUNT + "/otp/resend";
     public static final String DE_ACTIVATE_USER = USER_ACCOUNT + "/deactivate";
@@ -54,6 +55,7 @@ public class AccountResourceConfig {
                 .PUT(UPDATE_PUBLIC_USER_PASSWORD, accept(MediaType.APPLICATION_JSON), handler::updatePublicPassword)
                 .PUT(UPDATE_PROFILE_PICS, accept(MediaType.APPLICATION_JSON), handler::updateProfilePicture)
                 .PUT(UPDATE_DOCUMENT, accept(MediaType.APPLICATION_JSON), handler::updateUserDocument)
+                .PUT(RESET_USER_PASSWORD, accept(MediaType.APPLICATION_JSON), handler::passwordReset)
                 .build();
     }
 }

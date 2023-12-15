@@ -46,6 +46,7 @@ public class ResourceServer {
             "/v1/account/verify/**",
             "/v1/account/otp/resend",
             "/v1/account/password/update",
+            "/v1/account/password/reset/**",
             "/v1/profile/brand",
             "/v1/profile/influencer",
             "/v1/profile/types",
