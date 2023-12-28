@@ -145,7 +145,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                                 )
                         )
                 ).switchIfEmpty(
-                        handleOnErrorResume(new AppException("Username/Email is not on our record"), BAD_REQUEST.value())
+                        handleOnErrorResume(new AppException(INVALID_EMAIL), BAD_REQUEST.value())
                 );
     }
 

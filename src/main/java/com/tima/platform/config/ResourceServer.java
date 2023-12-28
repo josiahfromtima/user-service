@@ -54,6 +54,7 @@ public class ResourceServer {
             "/v1/countries",
             "/v1/countries/name/**",
             "/v1/address",
+            "/v1/industries/**",
             "/v1/captcha/**"
             // other public endpoints of your API may be appended to this array
     };

@@ -1,6 +1,8 @@
 package com.tima.platform.service.aws.s3;
 
 
+import com.tima.platform.model.api.AppResponse;
+import com.tima.platform.util.AppUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -32,8 +34,8 @@ public class AwsS3Service {
     private String contentType;
     private static final String BUCKET_NAME = "tima-resources";
 
-    public Mono<String> getSignedUrl(String folder, String keyName) {
-        return Mono.just(createPreSignedUrl(folder, keyName));
+    public Mono<AppResponse> getSignedUrl(String folder, String keyName) {
+        return Mono.just(AppUtil.buildAppResponse(createPreSignedUrl(folder, keyName), "Created Signed Url"));
     }
 
     /**

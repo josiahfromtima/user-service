@@ -1,12 +1,16 @@
 package com.tima.platform.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.gson.reflect.TypeToken;
 import com.tima.platform.converter.AddressConverter;
 import com.tima.platform.domain.Address;
 import com.tima.platform.domain.Country;
 import com.tima.platform.domain.User;
+import com.tima.platform.event.AddUserIndustryEvent;
 import com.tima.platform.exception.AppException;
 import com.tima.platform.model.api.AppResponse;
 import com.tima.platform.model.api.request.AddressRequestRecord;
+import com.tima.platform.model.api.request.ClientIndustryRecord;
 import com.tima.platform.repository.AddressRepository;
 import com.tima.platform.repository.CountryRepository;
 import com.tima.platform.repository.UserProfileRepository;
@@ -19,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
@@ -39,6 +44,7 @@ public class AddressService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final CountryRepository countryRepository;
+    private final AddUserIndustryEvent userIndustryEvent;
 
     @Value("${aws.s3.url}")
     private String baseResourceUrl;
@@ -116,6 +122,16 @@ public class AddressService {
                 .then(Mono.fromCallable(() -> AppUtil.buildAppResponse( "User Deleted", ADDRESS_MSG)));
     }
 
+    public Mono<AppResponse> addUserIndustry(String publicId, JsonNode industries) {
+        log.info("Adding User Selected Industries");
+        return validateUser(publicId)
+                .flatMap(user ->  userIndustryEvent.sendUserSelection(ClientIndustryRecord.builder()
+                                .userPublicId(publicId)
+                                .selectedIndustries(json(industries.at("/industries").toString()))
+                        .build()))
+                .map(b -> AppUtil.buildAppResponse( "User Selection Accepted", ADDRESS_MSG));
+    }
+
     private Mono<Country> validateCountry(String name) {
         return countryRepository.findByName(name)
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_COUNTRY), NOT_FOUND.value()));
@@ -124,6 +140,11 @@ public class AddressService {
         return userRepository.findByPublicId(publicId)
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), NOT_FOUND.value()));
     }
+
+    private static List<String> json(String value) {
+        return AppUtil.gsonInstance().fromJson(value, new TypeToken<List<String>>(){}.getType());
+    }
+
 
     private int getOrDefault(Integer value) {
         return Objects.isNull(value) ? 0 : value;

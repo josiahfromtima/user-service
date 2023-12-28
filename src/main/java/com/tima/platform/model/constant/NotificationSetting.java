@@ -9,4 +9,5 @@ import lombok.Data;
  * @Date: 12/6/23
  */
 @Builder
-public record NotificationSetting(boolean campaignUpdateAlert, boolean emailAlert, boolean paymentUpdateAlert) {}
+public record NotificationSetting(boolean campaignUpdateAlert,
+                                  boolean emailAlert, boolean paymentUpdateAlert) {}

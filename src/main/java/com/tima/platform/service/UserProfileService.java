@@ -5,6 +5,7 @@ import com.tima.platform.domain.User;
 import com.tima.platform.domain.UserProfile;
 import com.tima.platform.exception.AppException;
 import com.tima.platform.model.api.AppResponse;
+import com.tima.platform.model.api.request.NotificationSettingRecord;
 import com.tima.platform.model.api.request.UserInfluencerRecord;
 import com.tima.platform.model.api.request.UserProfileRecord;
 import com.tima.platform.model.api.request.signin.UserBrandRecord;
@@ -20,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
@@ -162,6 +164,22 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
+    public Mono<AppResponse> updateSettings(NotificationSettingRecord setting) {
+        return userRepository.findByPublicId(setting.publicId())
+                .flatMap(user -> getUserProfileFromDB(user.getId()))
+                .flatMap(userProfile -> {
+                            userProfile.setNotificationSetting(toJson(NotificationSetting.builder()
+                                    .campaignUpdateAlert(setting.campaignUpdateAlert())
+                                    .emailAlert(setting.emailAlert())
+                                    .paymentUpdateAlert(setting.paymentUpdateAlert())
+                                    .build()));
+                            return profileRepository.save(userProfile);
+                })
+                .map(UserProfileConverter::mapToRecord)
+                .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
+    }
+
     private Mono<UserProfile> getUserProfileFromDB(Integer id) {
         return profileRepository.findById(getOrDefault(id));
     }
@@ -173,6 +191,10 @@ public class UserProfileService {
                                 handleOnErrorResume(new AppException(DUPLICATE_CREATION), BAD_REQUEST.value())
                                 : Mono.just(user))
                 );
+    }
+
+    private String toJson(NotificationSetting items) {
+        return AppUtil.gsonInstance().toJson(items);
     }
 
     private Mono<Boolean> checkForProfile(User user) {
