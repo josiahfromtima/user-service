@@ -1,6 +1,7 @@
 package com.tima.platform.resource.account;
 
 import com.tima.platform.config.AuthTokenConfig;
+import com.tima.platform.config.CustomValidator;
 import com.tima.platform.model.api.ApiResponse;
 import com.tima.platform.model.api.request.PasswordRestRecord;
 import com.tima.platform.model.api.request.UserInfluencerRecord;
@@ -13,12 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 import static com.tima.platform.model.api.ApiResponse.buildServerResponse;
@@ -34,7 +31,7 @@ import static com.tima.platform.model.api.ApiResponse.buildServerResponse;
 public class AccountResourceHandler {
     private final UserSignUpService signUpService;
     private final UserProfileService userProfileService;
-    private final Validator validator;
+    private final CustomValidator validator;
 
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
@@ -42,7 +39,8 @@ public class AccountResourceHandler {
     private String passwordResetTemplateId;
 
     public Mono<ServerResponse> createUserAccount(ServerRequest request)  {
-        Mono<UserRecord> userProfileDtoMono = request.bodyToMono(UserRecord.class);
+        Mono<UserRecord> userProfileDtoMono = request.bodyToMono(UserRecord.class)
+                .doOnNext(validator::validateEntries);
         log.info("[{}] Create New User Requested", request.remoteAddress().orElse(null));
 
         return userProfileDtoMono
@@ -119,7 +117,8 @@ public class AccountResourceHandler {
                 ).flatMap(ApiResponse::buildServerResponse);
     }
     public Mono<ServerResponse> createBrandProfile(ServerRequest request)  {
-        Mono<UserBrandRecord> userProfileMono = request.bodyToMono(UserBrandRecord.class).doOnNext(this::validate);
+        Mono<UserBrandRecord> userProfileMono = request.bodyToMono(UserBrandRecord.class)
+                .doOnNext(validator::validateEntries);
         log.info("[{}] Create User Brand Profile Requested", request.remoteAddress().orElse(null));
         return userProfileMono
                 .map( userProfileService::createUserProfile )
@@ -128,7 +127,7 @@ public class AccountResourceHandler {
 
     public Mono<ServerResponse> createInfluenceProfile(ServerRequest request)  {
         Mono<UserInfluencerRecord> userProfileMono
-                = request.bodyToMono(UserInfluencerRecord.class).doOnNext(this::validate);
+                = request.bodyToMono(UserInfluencerRecord.class).doOnNext(validator::validateEntries);
         log.info("[{}] Create User Influence Profile Requested", request.remoteAddress().orElse(null));
         return userProfileMono
                 .map( userProfileService::createUserProfile )
@@ -169,16 +168,5 @@ public class AccountResourceHandler {
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(publicId -> userProfileService.updateDocument(publicId, pictureName))
                 .flatMap(ApiResponse::buildServerResponse);
-    }
-
-    private void validate(UserBrandRecord profileDto) {
-        Errors errors = new BeanPropertyBindingResult(profileDto, "profileDto");
-        validator.validate(profileDto, errors);
-        if(errors.hasErrors()) throw new ServerWebInputException(errors.toString());
-    }
-    private void validate(UserInfluencerRecord profileDto) {
-        Errors errors = new BeanPropertyBindingResult(profileDto, "profileDto");
-        validator.validate(profileDto, errors);
-        if(errors.hasErrors()) throw new ServerWebInputException(errors.toString());
     }
 }

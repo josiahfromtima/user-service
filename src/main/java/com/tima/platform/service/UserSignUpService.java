@@ -55,10 +55,14 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     private String activationMailTemplateId;
     private static final String INVALID_USER = "Invalid username";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
+    private static final String INVALID_USER_TYPE = "Missing/Invalid User Type. Use the get User types endpoint to " +
+            "get valid types";
     private static final String DUPLICATE_ERROR = "We could not resolve the email";
 
     @Override
     protected Mono<User> createUserAccount(UserRecord accountToCreate) throws AppException {
+        if(Objects.isNull(accountToCreate.userType()))
+            return handleOnErrorResume(new AppException(INVALID_USER_TYPE), BAD_REQUEST.value());
         return userRepository.findByUsername(accountToCreate.username())
                 .flatMap(alreadyExist ->
                                 handleOnErrorResume(new AppException("01 - Username Already Exist "),
