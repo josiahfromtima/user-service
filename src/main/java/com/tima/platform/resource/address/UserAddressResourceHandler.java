@@ -2,6 +2,7 @@ package com.tima.platform.resource.address;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.tima.platform.config.AuthTokenConfig;
+import com.tima.platform.config.CustomValidator;
 import com.tima.platform.model.api.ApiResponse;
 import com.tima.platform.model.api.request.AddressRequestRecord;
 import com.tima.platform.model.api.request.CountryRecordList;
@@ -33,6 +34,7 @@ public class UserAddressResourceHandler {
     private final AwsS3Service awsS3Service;
     private final CountryService countryService;
     private final AddressService addressService;
+    private final CustomValidator validator;
     @Value("${aws.s3.resource.profile}")
     private String profileFolder;
     @Value("${aws.s3.resource.document}")
@@ -68,7 +70,7 @@ public class UserAddressResourceHandler {
     }
 
     public Mono<ServerResponse> saveNewCountry(ServerRequest request)  {
-        Mono<CountryRecord> recordMono = request.bodyToMono(CountryRecord.class);
+        Mono<CountryRecord> recordMono = request.bodyToMono(CountryRecord.class).doOnNext(validator::validateEntries);
         log.info("Registered a new country Requested", request.remoteAddress().orElse(null));
         return recordMono
                 .map(countryService::createCountry)
@@ -100,7 +102,8 @@ public class UserAddressResourceHandler {
      *  This section marks the user address activities
      */
     public Mono<ServerResponse> addUserAddress(ServerRequest request)  {
-        Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class);
+        Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class)
+                .doOnNext(validator::validateEntries);
         log.info("Add a new user address Requested", request.remoteAddress().orElse(null));
         return recordMono
                 .map(addressService::addAddress)
@@ -123,7 +126,8 @@ public class UserAddressResourceHandler {
     }
 
     public Mono<ServerResponse> updateUserAddress(ServerRequest request)  {
-        Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class);
+        Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class)
+                .doOnNext(validator::validateEntries);
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
         log.info("Update user address Requested", request.remoteAddress().orElse(null));
         return jwtAuthToken

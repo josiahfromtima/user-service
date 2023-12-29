@@ -1,6 +1,7 @@
 package com.tima.platform.model.api.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.util.List;
@@ -12,4 +13,9 @@ import java.util.List;
  */
 @Builder
 @JsonIgnoreProperties
-public record CountryRecord(String name, List<String> language, String currency) {}
+public record CountryRecord(@NotNull(message = "Country Name is Required")
+                            String name,
+                            @NotNull(message = "Country Languages is Required")
+                            List<String> language,
+                            @NotNull(message = "Country Currency is Required")
+                            String currency) {}

@@ -1,6 +1,7 @@
 package com.tima.platform.model.api.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.time.Instant;
@@ -12,5 +13,16 @@ import java.time.Instant;
  */
 @Builder
 @JsonIgnoreProperties
-public record AddressRecord(String street, String city, String state, String postCode, String country, Instant createdOn)
+public record AddressRecord(
+        @NotNull(message = "User Street is Required")
+        String street,
+        @NotNull(message = "User City is Required")
+        String city,
+        @NotNull(message = "User State is Required")
+        String state,
+        @NotNull(message = "User Post Code is Required")
+        String postCode,
+        @NotNull(message = "User Country is Required")
+        String country,
+        Instant createdOn)
 {}
