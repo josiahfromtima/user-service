@@ -22,8 +22,8 @@ public class UserAddressResourceConfig {
     public static final String COUNTRY_BASE = API_V1_URL + "/countries";
     public static final String INDUSTRIES_BASE = API_V1_URL + "/industries/{publicId}";
     public static final String ADDRESS_BASE = API_V1_URL + "/address";
-    public static final String PROFILE_PICTURE = SIGNED_URL + "/pics/{keyName}";
-    public static final String USER_DOCUMENT = SIGNED_URL + "/docs/{keyName}";
+    public static final String PROFILE_PICTURE = SIGNED_URL + "/pics/{keyName}/{extension}";
+    public static final String USER_DOCUMENT = SIGNED_URL + "/docs/{keyName}/{extension}";
     public static final String COUNTRY_BY_NAME = COUNTRY_BASE + "/name/{name}";
     public static final String POST_COUNTRY = COUNTRY_BASE ;
     public static final String POST_COUNTRY_LIST = COUNTRY_BASE + "/multiple";

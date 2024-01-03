@@ -45,14 +45,16 @@ public class UserAddressResourceHandler {
      */
     public Mono<ServerResponse> getSignedProfilePicture(ServerRequest request)  {
         String keyName = request.pathVariable("keyName");
+        String extension = request.pathVariable("extension");
         log.info("Get Signed Profile Picture URL Requested ", request.remoteAddress().orElse(null));
-        return buildServerResponse(awsS3Service.getSignedUrl(profileFolder, keyName));
+        return buildServerResponse(awsS3Service.getSignedUrl(profileFolder, keyName, extension));
     }
 
     public Mono<ServerResponse> getSignedUserDocument(ServerRequest request)  {
         String keyName = request.pathVariable("keyName");
+        String extension = request.pathVariable("extension");
         log.info("Get Signed Signed Document URL Requested", request.remoteAddress().orElse(null));
-        return buildServerResponse(awsS3Service.getSignedUrl(documentFolder, keyName));
+        return buildServerResponse(awsS3Service.getSignedUrl(documentFolder, keyName, extension));
     }
 
     /**

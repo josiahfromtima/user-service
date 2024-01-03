@@ -16,9 +16,11 @@ import com.tima.platform.repository.UserProfileRepository;
 import com.tima.platform.repository.UserRepository;
 import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.util.RouteMatcher;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -33,6 +35,7 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
  * @Email: josleke@gmail.com, josiah.adetayo@meld-tech.com
  * @Date: 12/7/23
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserProfileService {
@@ -52,7 +55,6 @@ public class UserProfileService {
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
 
-    @PreAuthorize(ADMIN_INFLUENCER)
     public Mono<AppResponse> createUserProfile(UserInfluencerRecord userProfile) {
         return checkUserExistence(userProfile.publicId())
                 .flatMap(user -> profileRepository.save(UserProfileConverter
@@ -72,9 +74,9 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
-    @PreAuthorize(ADMIN_BRAND)
     public Mono<AppResponse> createUserProfile(UserBrandRecord userProfile) {
         return checkUserExistence(userProfile.publicId())
+                .doOnNext(System.out::println)
                 .flatMap(user -> profileRepository.save(UserProfileConverter
                         .mapToEntity(UserProfileRecord.builder()
                                 .companyName(userProfile.companyName())

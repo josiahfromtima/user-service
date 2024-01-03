@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 /**
@@ -30,12 +31,10 @@ public class AwsS3Service {
     private String region;
     @Value("${aws.s3.image-ext}")
     private String defaultFileExtension;
-    @Value("${aws.s3.content-type}")
-    private String contentType;
     private static final String BUCKET_NAME = "tima-resources";
 
-    public Mono<AppResponse> getSignedUrl(String folder, String keyName) {
-        return Mono.just(AppUtil.buildAppResponse(createPreSignedUrl(folder, keyName), "Created Signed Url"));
+    public Mono<AppResponse> getSignedUrl(String folder, String keyName, String ext) {
+        return Mono.just(AppUtil.buildAppResponse(createPreSignedUrl(folder, keyName, ext), "Created Signed Url"));
     }
 
     /**
@@ -44,14 +43,14 @@ public class AwsS3Service {
      * @param keyName - The name of the object.
      * @return - The presigned URL for an HTTP PUT.
      */
-    private String createPreSignedUrl(String folderName, String keyName) {
+    private String createPreSignedUrl(String folderName, String keyName, String ext) {
         String message = BUCKET_NAME + " " + keyName+" "+folderName;
         logger.info(message);
         try (S3Presigner preSigner = buildSigner()) {
             PutObjectRequest objectRequest = PutObjectRequest.builder()
                     .bucket(BUCKET_NAME)
-                    .key(folderName.concat(checkExt(keyName)))
-                    .contentType(contentType)
+                    .key(folderName.concat(checkExt(keyName, ext)))
+                    .contentType(extension(ext))
                     .metadata(new HashMap<>())
                     .build();
 
@@ -72,9 +71,12 @@ public class AwsS3Service {
         return S3Presigner.builder().region(Region.of(region)).build();
     }
 
-    private String checkExt(String file) {
-        if(file.contains(".jpeg") || file.contains(".jpg") || file.contains(".png")) return file;
-        else return file + defaultFileExtension;
+    private String checkExt(String file, String ext) {
+        return file + extension(ext);
+    }
+
+    private String extension(String ext) {
+        return (Objects.isNull(ext) || ext.isEmpty()) ? defaultFileExtension : ext;
     }
 
 }
