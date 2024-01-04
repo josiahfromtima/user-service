@@ -142,6 +142,12 @@ public class AccountResourceHandler {
                 .map(userProfileService::getUserProfile)
                 .flatMap(ApiResponse::buildServerResponse);
     }
+
+    public Mono<ServerResponse> getUserProfileByAdmin(ServerRequest request)  {
+        String publicId = request.pathVariable("publicId");
+        log.info("[{}] Fetch User Profile By Admin Requested", request.remoteAddress().orElse(null));
+        return buildServerResponse(userProfileService.getUserProfileByAdmin(publicId));
+    }
     public Mono<ServerResponse> deActivateUser(ServerRequest request)  {
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
         log.info("[{}] De-Activated User Account Requested", request.remoteAddress().orElse(null));

@@ -20,10 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.util.RouteMatcher;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
@@ -93,7 +91,7 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
-    @PreAuthorize(BRAND)
+    @PreAuthorize(ADMIN_BRAND)
     public Mono<AppResponse> updateProfile(String publicId, UserBrandRecord userRecord) {
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
@@ -109,7 +107,7 @@ public class UserProfileService {
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
 
-    @PreAuthorize(INFLUENCER)
+    @PreAuthorize(ADMIN_INFLUENCER)
     public Mono<AppResponse> updateProfile(String publicId, UserInfluencerRecord userRecord) {
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
@@ -129,6 +127,19 @@ public class UserProfileService {
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)
     public Mono<AppResponse> getUserProfile(String publicId) {
         return userRepository.findByPublicId(publicId)
+                .flatMap(user -> getUserProfileFromDB(user.getId())
+                        .map(userProfile -> FullUserProfileRecord.builder()
+                                .username(user.getUsername())
+                                .publicId(user.getPublicId())
+                                .profile(UserProfileConverter.mapToRecord(userProfile))
+                                .build()
+                        )
+                ).map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+    }
+    @PreAuthorize(ADMIN)
+    public Mono<AppResponse> getUserProfileByAdmin(String userPublicId) {
+        return userRepository.findByPublicId(userPublicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
                         .map(userProfile -> FullUserProfileRecord.builder()
                                 .username(user.getUsername())

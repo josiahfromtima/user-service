@@ -1,5 +1,6 @@
 package com.tima.platform.model.api.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tima.platform.model.api.request.UserProfileRecord;
 import lombok.Builder;
 
@@ -9,4 +10,5 @@ import lombok.Builder;
  * @Date: 12/8/23
  */
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record FullUserProfileRecord(String username, String publicId, UserProfileRecord profile) {}

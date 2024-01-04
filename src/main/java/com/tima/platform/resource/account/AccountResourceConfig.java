@@ -23,6 +23,7 @@ public class AccountResourceConfig {
     public static final String USER_BRAND_ACCOUNT = USER_PROFILE + "/brand";
     public static final String USER_INFLUENCER_ACCOUNT = USER_PROFILE + "/influencer";
     public static final String GET_USER_PROFILE = USER_PROFILE;
+    public static final String GET_USER_PROFILE_ADMIN = USER_PROFILE + "/id/{publicId}";
     public static final String USER_TYPE = USER_PROFILE + "/types";
     public static final String UPDATE_BRAND_ACCOUNT = USER_PROFILE + "/brand";
     public static final String UPDATE_INFLUENCER_ACCOUNT = USER_PROFILE + "/influencer";
@@ -46,6 +47,7 @@ public class AccountResourceConfig {
                         .and(contentType(MediaType.APPLICATION_JSON)), handler::createInfluenceProfile)
                 .GET(USER_TYPE, accept(MediaType.APPLICATION_JSON), handler::getUserType)
                 .GET(GET_USER_PROFILE, accept(MediaType.APPLICATION_JSON), handler::getUserProfile)
+                .GET(GET_USER_PROFILE_ADMIN, accept(MediaType.APPLICATION_JSON), handler::getUserProfileByAdmin)
                 .GET(VERIFY_OTP, accept(MediaType.APPLICATION_JSON), handler::verifyOtp)
                 .PUT(DE_ACTIVATE_USER, accept(MediaType.APPLICATION_JSON), handler::deActivateUser)
                 .POST(RESEND_OTP, accept(MediaType.APPLICATION_JSON), handler::resendOtp)

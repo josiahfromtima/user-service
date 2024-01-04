@@ -1,6 +1,6 @@
 package com.tima.platform.model.api.request;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tima.platform.model.constant.UserType;
 import lombok.Builder;
 
@@ -12,7 +12,7 @@ import java.time.Instant;
  * @Date: 12/6/23
  */
 @Builder
-@JsonIgnoreProperties
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record UserProfileRecord (String firstName, String middleName, String lastName, String email,
                                  String phoneNumber, UserType userType, String companyName, String website,
                                  String language, String profilePicture, String registeredDocument,
