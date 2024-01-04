@@ -50,7 +50,7 @@ public class AwsS3Service {
             PutObjectRequest objectRequest = PutObjectRequest.builder()
                     .bucket(BUCKET_NAME)
                     .key(folderName.concat(checkExt(keyName, ext)))
-                    .contentType("image/"+extension(ext))
+                    .contentType(fileCategory(ext)+extension(ext))
                     .metadata(new HashMap<>())
                     .build();
 
@@ -79,4 +79,9 @@ public class AwsS3Service {
         return (Objects.isNull(ext) || ext.isEmpty()) ? defaultFileExtension : ext;
     }
 
+    private String fileCategory(String type) {
+        if(Objects.isNull(type) || type.isEmpty()) return "image/";
+        if(type.matches("png|jpeg|jpg|gif|svg")) return "image/";
+        else return "application/";
+    }
 }
