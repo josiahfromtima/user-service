@@ -50,7 +50,7 @@ public class AwsS3Service {
             PutObjectRequest objectRequest = PutObjectRequest.builder()
                     .bucket(BUCKET_NAME)
                     .key(folderName.concat(checkExt(keyName, ext)))
-                    .contentType(extension(ext))
+                    .contentType("image/"+extension(ext))
                     .metadata(new HashMap<>())
                     .build();
 
@@ -72,7 +72,7 @@ public class AwsS3Service {
     }
 
     private String checkExt(String file, String ext) {
-        return file + extension(ext);
+        return file + "." + extension(ext);
     }
 
     private String extension(String ext) {
