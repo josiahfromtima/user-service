@@ -24,5 +24,6 @@ public record AddressRecord(
         String postCode,
         @NotNull(message = "User Country is Required")
         String country,
+        String language,
         Instant createdOn)
 {}

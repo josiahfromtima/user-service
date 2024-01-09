@@ -32,6 +32,7 @@ public class Address implements Serializable, Persistable<Integer> {
     private String state;
     private String postCode;
     private String country;
+    private String language;
     private Instant createdOn;
     @Transient
     private Integer userId;

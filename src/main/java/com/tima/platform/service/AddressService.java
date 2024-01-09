@@ -105,6 +105,7 @@ public class AddressService {
                                             address.setState(requestRecord.addressRecord().state());
                                             address.setPostCode(requestRecord.addressRecord().postCode());
                                             address.setCountry(requestRecord.addressRecord().country());
+                                            address.setLanguage(requestRecord.addressRecord().language());
                                             return addressRepository.save(address);
                                         })
                             .map(AddressConverter::mapToRecord)

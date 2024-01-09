@@ -4,6 +4,7 @@ import com.tima.platform.config.AuthTokenConfig;
 import com.tima.platform.config.CustomValidator;
 import com.tima.platform.model.api.ApiResponse;
 import com.tima.platform.model.api.request.PasswordRestRecord;
+import com.tima.platform.model.api.request.PasswordUpdateRecord;
 import com.tima.platform.model.api.request.UserInfluencerRecord;
 import com.tima.platform.model.api.request.UserRecord;
 import com.tima.platform.model.api.request.signin.UserBrandRecord;
@@ -89,9 +90,10 @@ public class AccountResourceHandler {
 
     public Mono<ServerResponse> updatePublicPassword(ServerRequest request)  {
         Mono<UserRecord> userCredentialsMono = request.bodyToMono(UserRecord.class);
+        PasswordUpdateRecord headers = ApiResponse.getHashAndSalt(request);
         log.info("[{}] Update Password from Public Requested", request.remoteAddress().orElse(null));
         return userCredentialsMono
-                .map(userRecord -> signUpService.changePassword(userRecord.publicId(), userRecord.password()) )
+                .map(userRecord -> signUpService.changePassword(userRecord.publicId(), userRecord.password(), headers))
                 .flatMap(ApiResponse::buildServerResponse);
     }
 

@@ -6,11 +6,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /**
@@ -29,13 +31,16 @@ public class Verification implements Serializable, Persistable<Integer> {
     private Integer id;
     private String userOtp;
     private Integer userId;
+    private String type;
     private Instant createdOn;
+    @Transient
+    private long durationInHours;
 
     @Override
     public boolean isNew() {
         boolean newRecord = AppUtil.isNewRecord(id);
         if(newRecord) {
-            createdOn = Instant.now();
+            createdOn = Instant.now().plus(durationInHours, ChronoUnit.HOURS);
         }
         return newRecord;
     }

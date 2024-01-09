@@ -7,13 +7,16 @@ import com.tima.platform.event.EmailEvent;
 import com.tima.platform.exception.AppException;
 import com.tima.platform.model.api.AppResponse;
 import com.tima.platform.model.api.request.PasswordRestRecord;
+import com.tima.platform.model.api.request.PasswordUpdateRecord;
 import com.tima.platform.model.api.request.UserRecord;
 import com.tima.platform.model.api.response.NewUserRecord;
 import com.tima.platform.model.api.response.OtpRecord;
 import com.tima.platform.model.constant.UserType;
+import com.tima.platform.model.constant.VerificationType;
 import com.tima.platform.model.event.EmailTemplate;
 import com.tima.platform.model.event.GenericRequest;
 import com.tima.platform.repository.*;
+import com.tima.platform.service.encoding.MessageEncoding;
 import com.tima.platform.service.template.UserSignupTemplate;
 import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +26,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
+import static com.tima.platform.model.constant.VerificationType.OTHERS;
+import static com.tima.platform.model.constant.VerificationType.PASSWORD_RESET;
 import static com.tima.platform.model.security.TimaAuthority.ADMIN_BRAND_INFLUENCER;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -54,6 +60,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
     private static final String INVALID_USER = "Invalid username";
+    private static final String INVALID_HASH = "Invalid hash";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
     private static final String INVALID_USER_TYPE = "Missing/Invalid User Type. Use the get User types endpoint to " +
             "get valid types";
@@ -116,7 +123,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
         return verificationRepository.findByUserOtp(otp)
                 .flatMap(verification -> {
                     verification.setUserOtp(null);
-                    deleteOtp(verification);
+                    if(verification.getType().equals(OTHERS.name())) deleteOtp(verification);
                     return activateUser(verification.getUserId())
                             .map(user -> AppUtil.buildAppResponse(OtpRecord.builder()
                                     .message("Valid OTP")
@@ -134,6 +141,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .flatMap(user -> verificationRepository.findByUserId(user.getId())
                         .flatMap(verification -> {
                             verification.setUserOtp(newOTP);
+                            verification.setType(OTHERS.name());
+                            verification.setDurationInHours(1L);
                             return verificationRepository.save(verification)
                                     .map(v -> user);
                         })
@@ -153,13 +162,15 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 );
     }
 
-    public Mono<AppResponse> resendOtp(Integer userId, String email, String templateId) {
+    public Mono<AppResponse> resendOtp(Integer userId, String email, String templateId, VerificationType type) {
         String newOTP = AppUtil.generateOTP(6);
         log.info("resendOtp: {} -- {}", email, userId);
         return userRepository.findById(userId)
                 .flatMap(user -> verificationRepository.save(Verification.builder()
                                         .userId(user.getId())
                                         .userOtp(newOTP)
+                                        .type(type.name())
+                                        .durationInHours(1L)
                                         .build() )
                                     .map(v -> user)
                         ).flatMap(foundUser -> emailEvent.sendMail(GenericRequest.builder()
@@ -180,7 +191,10 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     public Mono<AppResponse> resetPasswordRequest(String email, String templateId) {
         log.info("resetPasswordRequest: {}", email);
         return userProfileRepository.findByEmail(email)
-                .flatMap(userProfile -> resendOtp(userProfile.getId(), userProfile.getEmail(), templateId))
+                .flatMap(userProfile -> resendOtp(userProfile.getId(),
+                        userProfile.getEmail(),
+                        templateId,
+                        PASSWORD_RESET))
                 .switchIfEmpty(handleOnErrorResume(
                         new AppException("No record found"), BAD_REQUEST.value()))
                 .onErrorResume(throwable -> handleOnErrorResume(
@@ -200,8 +214,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
     }
 
-    public Mono<AppResponse> changePassword(String publicId, String password){
-        return userRepository.findByPublicId(publicId)
+    public Mono<AppResponse> changePassword(String publicId, String password, PasswordUpdateRecord header){
+        return validateHash(publicId, header.hash(), header.salt())
                 .flatMap(user -> {
                         user.setPassword(passwordEncoder.encode(password));
                         return userRepository.save(user);
@@ -223,6 +237,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         handleOnErrorResume(new AppException("Invalid User"), BAD_REQUEST.value())
                 );
     }
+
+
     private Mono<User> activateUser(Integer id){
         return userRepository.findById(id)
                 .flatMap( user ->  {
@@ -239,6 +255,28 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     }
     public Mono<AppResponse> getUserType(){
         return Mono.just(AppUtil.buildAppResponse(UserType.values(), USER_MSG));
+    }
+
+    private Mono<User> validateHash(String publicId, String userHash, String salt) {
+        return verifyCredentials(publicId)
+                .flatMap(aggregate -> {
+                   String pattern = String.format("%s%s%s", aggregate.getT2().getUserOtp(), publicId, salt);
+                   String hashedValue = MessageEncoding.hash512(pattern);
+                   if(hashedValue.equalsIgnoreCase(userHash)) {
+                       deleteOtp(aggregate.getT2());
+                       return Mono.just(aggregate.getT1());
+                   }
+                   return handleOnErrorResume(new AppException(INVALID_HASH), BAD_REQUEST.value());
+                });
+    }
+
+    private Mono<Tuple2<User, Verification>> verifyCredentials(String publicId) {
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> verificationRepository.findByUserIdAndType(user.getId(), PASSWORD_RESET.name())
+                        .flatMap(verification -> Mono.zip(Mono.just(user), Mono.just(verification))
+                                .onErrorResume(throwable ->
+                                        handleOnErrorResume(new AppException("Wrong Otp/User"), BAD_REQUEST.value()))
+                )).switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
     }
 
     private String encodeSecret(String secret) {

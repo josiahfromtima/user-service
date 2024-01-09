@@ -21,6 +21,7 @@ public class AddressConverter {
                 .state(getOrDefault(dto.state(), ""))
                 .postCode(getOrDefault(dto.postCode(), ""))
                 .country(getOrDefault(dto.country(), "N/A"))
+                .language(getOrDefault(dto.language(), "N/A"))
                 .build();
     }
 
@@ -31,6 +32,7 @@ public class AddressConverter {
                 .state(entity.getState())
                 .postCode(entity.getPostCode())
                 .country(entity.getCountry())
+                .language(entity.getLanguage())
                 .createdOn(entity.getCreatedOn())
                 .build();
     }

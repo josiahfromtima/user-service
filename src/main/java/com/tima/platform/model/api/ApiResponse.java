@@ -1,6 +1,8 @@
 package com.tima.platform.model.api;
 
+import com.tima.platform.model.api.request.PasswordUpdateRecord;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
@@ -26,5 +28,12 @@ public class ApiResponse {
         return jwtToken.getTokenAttributes()
                 .getOrDefault("public_id", "")
                 .toString();
+    }
+
+    public static PasswordUpdateRecord getHashAndSalt(ServerRequest request) {
+        return PasswordUpdateRecord.builder()
+                .hash(request.headers().firstHeader("hash"))
+                .salt(request.headers().firstHeader("salt"))
+                .build();
     }
 }

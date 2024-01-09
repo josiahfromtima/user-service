@@ -128,8 +128,7 @@ public class UserAddressResourceHandler {
     }
 
     public Mono<ServerResponse> updateUserAddress(ServerRequest request)  {
-        Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class)
-                .doOnNext(validator::validateEntries);
+        Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class);
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
         log.info("Update user address Requested", request.remoteAddress().orElse(null));
         return jwtAuthToken
