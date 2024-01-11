@@ -15,6 +15,7 @@ import com.tima.platform.repository.AddressRepository;
 import com.tima.platform.repository.CountryRepository;
 import com.tima.platform.repository.UserProfileRepository;
 import com.tima.platform.repository.UserRepository;
+import com.tima.platform.util.AppError;
 import com.tima.platform.util.AppUtil;
 import com.tima.platform.util.LoggerHelper;
 import lombok.RequiredArgsConstructor;
@@ -90,7 +91,8 @@ public class AddressService {
                         .map(AddressConverter::mapToRecord)
                         .map(addressRecord -> AppUtil.buildAppResponse(addressRecord, ADDRESS_MSG))
                         .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER_PROFILE), BAD_REQUEST.value()))
-                ).onErrorResume(throwable -> handleOnErrorResume(new AppException(ERROR_MSG), BAD_REQUEST.value()));
+                ).onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)
@@ -112,7 +114,8 @@ public class AddressService {
                             .map(addressRecord -> AppUtil.buildAppResponse(addressRecord, ADDRESS_MSG))
                             .switchIfEmpty(handleOnErrorResume(new AppException(ERROR_MSG), BAD_REQUEST.value()))
                         )
-                );
+                ).onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)
@@ -130,7 +133,9 @@ public class AddressService {
                                 .userPublicId(publicId)
                                 .selectedIndustries(json(industries.at("/industries").toString()))
                         .build()))
-                .map(b -> AppUtil.buildAppResponse( "User Selection Accepted", ADDRESS_MSG));
+                .map(b -> AppUtil.buildAppResponse( "User Selection Accepted", ADDRESS_MSG))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     private Mono<Country> validateCountry(String name) {

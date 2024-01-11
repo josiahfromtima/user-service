@@ -6,6 +6,7 @@ import com.tima.platform.exception.AppException;
 import com.tima.platform.model.api.AppResponse;
 import com.tima.platform.model.api.response.CountryRecord;
 import com.tima.platform.repository.CountryRepository;
+import com.tima.platform.util.AppError;
 import com.tima.platform.util.AppUtil;
 import com.tima.platform.util.LoggerHelper;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,6 @@ import java.util.List;
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static com.tima.platform.model.security.TimaAuthority.ADMIN;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * @Author: Josiah Adetayo
@@ -54,7 +54,8 @@ public class CountryService {
                 .map(CountryConverter::mapToRecord)
                 .map(savedRecord -> AppUtil.buildAppResponse(savedRecord, COUNTRY_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(ERROR_MSG), BAD_REQUEST.value()))
-                .onErrorResume(throwable -> handleOnErrorResume(new AppException(ERROR_MSG), BAD_REQUEST.value()));
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
     @PreAuthorize(ADMIN)
     public Mono<AppResponse> updateCountries(CountryRecord countryRecord) {
@@ -67,7 +68,9 @@ public class CountryService {
                     return countryRepository.save(country);
                 })
                 .map(CountryConverter::mapToRecord)
-                .map(updateRecord -> AppUtil.buildAppResponse(updateRecord, COUNTRY_MSG));
+                .map(updateRecord -> AppUtil.buildAppResponse(updateRecord, COUNTRY_MSG))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
     @PreAuthorize(ADMIN)
     public Mono<AppResponse> deleteCountry(CountryRecord countryRecord) {
@@ -86,7 +89,8 @@ public class CountryService {
                         createdRecord.size() + " Countries created",
                         COUNTRY_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(ERROR_MSG), BAD_REQUEST.value()))
-                .onErrorResume(throwable -> handleOnErrorResume(new AppException(ERROR_MSG), BAD_REQUEST.value()));
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     private Mono<Country> validateCountry(String name) {

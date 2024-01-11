@@ -2,6 +2,9 @@ package com.tima.platform.exception;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.Objects;
+
 /**
  * @Author: Josiah Adetayo
  * @Email: josleke@gmail.com, josiah.adetayo@meld-tech.com

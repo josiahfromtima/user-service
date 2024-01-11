@@ -14,6 +14,7 @@ import com.tima.platform.model.constant.NotificationSetting;
 import com.tima.platform.model.constant.UserType;
 import com.tima.platform.repository.UserProfileRepository;
 import com.tima.platform.repository.UserRepository;
+import com.tima.platform.util.AppError;
 import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +70,9 @@ public class UserProfileService {
                                 .build()))
                 ).map(UserProfileConverter::mapToRecord)
                 .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
-                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     public Mono<AppResponse> createUserProfile(UserBrandRecord userProfile) {
@@ -88,7 +91,9 @@ public class UserProfileService {
                                 .build()))
                 ).map(UserProfileConverter::mapToRecord)
                 .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
-                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @PreAuthorize(ADMIN_BRAND)
@@ -104,7 +109,9 @@ public class UserProfileService {
                         })
                 ).map(UserProfileConverter::mapToRecord)
                 .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
-                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @PreAuthorize(ADMIN_INFLUENCER)
@@ -121,7 +128,9 @@ public class UserProfileService {
                         })
                 ).map(UserProfileConverter::mapToRecord)
                 .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
-                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)

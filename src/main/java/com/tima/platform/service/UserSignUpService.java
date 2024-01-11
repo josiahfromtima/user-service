@@ -18,6 +18,7 @@ import com.tima.platform.model.event.GenericRequest;
 import com.tima.platform.repository.*;
 import com.tima.platform.service.encoding.MessageEncoding;
 import com.tima.platform.service.template.UserSignupTemplate;
+import com.tima.platform.util.AppError;
 import com.tima.platform.util.AppUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +106,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
         return verificationRepository.save(Verification.builder()
                         .userId(newAccount.getId())
                         .userOtp(otp)
+                        .type(OTHERS.name())
                         .build() )
                 .flatMap(r -> emailEvent.sendMail(GenericRequest.builder()
                         .to(accountToCreate.email())
@@ -159,7 +161,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         )
                 ).switchIfEmpty(
                         handleOnErrorResume(new AppException(INVALID_EMAIL), BAD_REQUEST.value())
-                );
+                ).onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     public Mono<AppResponse> resendOtp(Integer userId, String email, String templateId, VerificationType type) {
@@ -197,8 +200,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         PASSWORD_RESET))
                 .switchIfEmpty(handleOnErrorResume(
                         new AppException("No record found"), BAD_REQUEST.value()))
-                .onErrorResume(throwable -> handleOnErrorResume(
-                        new AppException(errorCheck(throwable.getLocalizedMessage())), BAD_REQUEST.value()) );
+                .onErrorResume(t ->
+                handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)
@@ -281,12 +284,6 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private String encodeSecret(String secret) {
         return Objects.isNull(secret) ? null : passwordEncoder.encode(secret);
-    }
-
-    private String errorCheck(String error) {
-        if(error.contains("400 BAD_REQUEST")) {
-            return INVALID_EMAIL;
-        } return DUPLICATE_ERROR;
     }
 
 }
