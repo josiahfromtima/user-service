@@ -2,6 +2,7 @@ package com.tima.platform.service;
 
 import com.tima.platform.config.client.HttpConnectorService;
 import com.tima.platform.domain.CustomRefreshToken;
+import com.tima.platform.domain.User;
 import com.tima.platform.exception.AppException;
 import com.tima.platform.model.api.AppResponse;
 import com.tima.platform.model.api.request.signin.AccessToken;
@@ -63,7 +64,8 @@ public class SignInService extends UserSignInTemplate<SignInRequest, AppResponse
     @Value("${tima.iv}")
     private String aesIv;
 
-    private static final String DEACTIVATED_USER_MSG = "User Account is deactivated";
+    private static final String DEACTIVATED_USER_MSG = "User Account is not activated";
+    private static final String INVALID_USER_MSG = "Username/password is incorrect";
 
     private static final String USER_ACCOUNT_MSG = "User Request Executed Successfully";
     private static final String REFRESH_TOKEN_ERROR = "Refresh token could be validated. Please contact the administrator";
@@ -104,9 +106,9 @@ public class SignInService extends UserSignInTemplate<SignInRequest, AppResponse
 
     @Override
     protected Mono<UsernamePasswordToken> validateUser(UsernamePasswordToken credentials) throws AppException {
-        return userRepository.findByUsernameAndEnabled(credentials.getUsername(), true)
-                .map(user -> credentials)
-                .switchIfEmpty( handleOnErrorResume(new AppException(DEACTIVATED_USER_MSG), BAD_REQUEST.value()) );
+        return userRepository.findByUsername(credentials.getUsername())
+                .flatMap(user -> checkActiveStatus(user, credentials))
+                .switchIfEmpty( handleOnErrorResume(new AppException(INVALID_USER_MSG), BAD_REQUEST.value()) );
     }
 
     @Override
@@ -130,6 +132,11 @@ public class SignInService extends UserSignInTemplate<SignInRequest, AppResponse
                         }
                     }).flatMap(this::getAccessToken)
                     .switchIfEmpty(handleOnErrorResume(new AppException(REFRESH_TOKEN_EXPIRED), UNAUTHORIZED.value()));
+    }
+
+    private Mono<UsernamePasswordToken> checkActiveStatus(User user, UsernamePasswordToken credentials) {
+        return (user.isEnabled()) ?  Mono.just(credentials)
+        : handleOnErrorResume(new AppException(DEACTIVATED_USER_MSG), BAD_REQUEST.value());
     }
 
     private Mono<AccessToken> createRefreshToken(AccessToken accessToken, UsernamePasswordToken credentials) {
