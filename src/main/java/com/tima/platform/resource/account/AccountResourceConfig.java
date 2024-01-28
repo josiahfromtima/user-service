@@ -23,6 +23,8 @@ public class AccountResourceConfig {
     public static final String USER_BRAND_ACCOUNT = USER_PROFILE + "/brand";
     public static final String USER_INFLUENCER_ACCOUNT = USER_PROFILE + "/influencer";
     public static final String GET_USER_PROFILE = USER_PROFILE;
+    public static final String GET_USER_PROFILES = USER_PROFILE + "s";
+    public static final String GET_USER_PROFILE_BY_TYPE = USER_PROFILE + "/types/{type}";
     public static final String GET_USER_PROFILE_ADMIN = USER_PROFILE + "/id/{publicId}";
     public static final String USER_TYPE = USER_PROFILE + "/types";
     public static final String UPDATE_BRAND_ACCOUNT = USER_PROFILE + "/brand";
@@ -49,6 +51,8 @@ public class AccountResourceConfig {
                 .GET(GET_USER_PROFILE, accept(MediaType.APPLICATION_JSON), handler::getUserProfile)
                 .GET(GET_USER_PROFILE_ADMIN, accept(MediaType.APPLICATION_JSON), handler::getUserProfileByAdmin)
                 .GET(VERIFY_OTP, accept(MediaType.APPLICATION_JSON), handler::verifyOtp)
+                .GET(GET_USER_PROFILES, accept(MediaType.APPLICATION_JSON), handler::getUserProfiles)
+                .GET(GET_USER_PROFILE_BY_TYPE, accept(MediaType.APPLICATION_JSON), handler::getUserProfileByType)
                 .PUT(DE_ACTIVATE_USER, accept(MediaType.APPLICATION_JSON), handler::deActivateUser)
                 .POST(RESEND_OTP, accept(MediaType.APPLICATION_JSON), handler::resendOtp)
                 .PUT(UPDATE_BRAND_ACCOUNT, accept(MediaType.APPLICATION_JSON), handler::updateBrandProfile)

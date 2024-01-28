@@ -1,7 +1,11 @@
 package com.tima.platform.repository;
 
+import com.tima.platform.domain.User;
 import com.tima.platform.domain.UserProfile;
+import com.tima.platform.model.constant.UserType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -11,4 +15,6 @@ import reactor.core.publisher.Mono;
  */
 public interface UserProfileRepository extends ReactiveCrudRepository<UserProfile, Integer> {
     Mono<UserProfile> findByEmail(String email);
+    Flux<UserProfile> findAllBy(Pageable pageable);
+    Flux<UserProfile> findByUserType(UserType type, Pageable pageable);
 }

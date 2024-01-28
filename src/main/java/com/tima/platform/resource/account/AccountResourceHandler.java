@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import static com.tima.platform.model.api.ApiResponse.buildServerResponse;
+import static com.tima.platform.model.api.ApiResponse.reportSettings;
 
 /**
  * @Author: Josiah Adetayo
@@ -39,10 +40,12 @@ public class AccountResourceHandler {
     @Value("${email.password-reset.template}")
     private String passwordResetTemplateId;
 
+    private static final String X_FORWARD_FOR = "X-Forwarded-For";
+
     public Mono<ServerResponse> createUserAccount(ServerRequest request)  {
         Mono<UserRecord> userProfileDtoMono = request.bodyToMono(UserRecord.class)
                 .doOnNext(validator::validateEntries);
-        log.info("[{}] Create New User Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Create New User Requested", request.headers().firstHeader(X_FORWARD_FOR));
 
         return userProfileDtoMono
                 .map(signUpService::createUser)
@@ -50,13 +53,13 @@ public class AccountResourceHandler {
     }
 
     public Mono<ServerResponse> getUserType(ServerRequest request)  {
-        log.info("[{}] Get User Type Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Get User Type Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(signUpService.getUserType());
     }
 
     public Mono<ServerResponse> resendOtp(ServerRequest request)  {
         Mono<UserRecord> rendOtpMono = request.bodyToMono(UserRecord.class);
-        log.info("[{}] Resend Otp Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Resend Otp Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return rendOtpMono
                 .map(userDto -> signUpService.resendOtp(userDto.username(), userDto.email(), activationMailTemplateId ))
                 .flatMap(ApiResponse::buildServerResponse);
@@ -71,7 +74,7 @@ public class AccountResourceHandler {
 
     public Mono<ServerResponse> verifyOtp(ServerRequest request)  {
         String enteredOtp = request.pathVariable("otp");
-        log.info("[{}] Verify OTP Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Verify OTP Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(signUpService.verifyOtp(enteredOtp));
     }
 
@@ -79,7 +82,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> updatePassword(ServerRequest request)  {
         Mono<PasswordRestRecord> passwordRestRecordMono = request.bodyToMono(PasswordRestRecord.class);
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] Update Password/PIN Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Update Password/PIN Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(publicId ->  passwordRestRecordMono
@@ -91,7 +94,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> updatePublicPassword(ServerRequest request)  {
         Mono<UserRecord> userCredentialsMono = request.bodyToMono(UserRecord.class);
         PasswordUpdateRecord headers = ApiResponse.getHashAndSalt(request);
-        log.info("[{}] Update Password from Public Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Update Password from Public Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return userCredentialsMono
                 .map(userRecord -> signUpService.changePassword(userRecord.publicId(), userRecord.password(), headers))
                 .flatMap(ApiResponse::buildServerResponse);
@@ -100,7 +103,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> updateBrandProfile(ServerRequest request)  {
         Mono<UserBrandRecord> userCredentialsMono = request.bodyToMono(UserBrandRecord.class);
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] Update Brand User Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Update Brand User Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .flatMap(publicId -> userCredentialsMono.map(profile ->
@@ -111,7 +114,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> updateInfluenceProfile(ServerRequest request)  {
         Mono<UserInfluencerRecord> userCredentialsMono = request.bodyToMono(UserInfluencerRecord.class);
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] Update Influencer User Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Update Influencer User Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .flatMap(publicId -> userCredentialsMono.map(profile ->
@@ -121,7 +124,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> createBrandProfile(ServerRequest request)  {
         Mono<UserBrandRecord> userProfileMono = request.bodyToMono(UserBrandRecord.class)
                 .doOnNext(validator::validateEntries);
-        log.info("[{}] Create User Brand Profile Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Create User Brand Profile Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return userProfileMono
                 .map( userProfileService::createUserProfile )
                 .flatMap(ApiResponse::buildServerResponse);
@@ -130,7 +133,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> createInfluenceProfile(ServerRequest request)  {
         Mono<UserInfluencerRecord> userProfileMono
                 = request.bodyToMono(UserInfluencerRecord.class).doOnNext(validator::validateEntries);
-        log.info("[{}] Create User Influence Profile Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Create User Influence Profile Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return userProfileMono
                 .map( userProfileService::createUserProfile )
                 .flatMap(ApiResponse::buildServerResponse);
@@ -138,7 +141,7 @@ public class AccountResourceHandler {
 
     public Mono<ServerResponse> getUserProfile(ServerRequest request)  {
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] Fetch User Profile Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Fetch User Profile Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(userProfileService::getUserProfile)
@@ -147,12 +150,23 @@ public class AccountResourceHandler {
 
     public Mono<ServerResponse> getUserProfileByAdmin(ServerRequest request)  {
         String publicId = request.pathVariable("publicId");
-        log.info("[{}] Fetch User Profile By Admin Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Fetch User Profile By Admin Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(userProfileService.getUserProfileByAdmin(publicId));
+    }
+
+    public Mono<ServerResponse> getUserProfiles(ServerRequest request)  {
+        log.info("[{}] Fetch All User Profile By Admin Requested", request.headers().firstHeader(X_FORWARD_FOR));
+        return buildServerResponse(userProfileService.getUserProfiles(reportSettings(request)));
+    }
+
+    public Mono<ServerResponse> getUserProfileByType(ServerRequest request)  {
+        String type = request.pathVariable("type");
+        log.info("[{}] Fetch User Profile By User Type Requested", request.headers().firstHeader(X_FORWARD_FOR));
+        return buildServerResponse(userProfileService.getUserProfilesByType(type, reportSettings(request)));
     }
     public Mono<ServerResponse> deActivateUser(ServerRequest request)  {
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] De-Activated User Account Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] De-Activated User Account Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(signUpService::deActivateUser)
@@ -162,7 +176,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> updateProfilePicture(ServerRequest request)  {
         String pictureName = request.pathVariable("pictureName");
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] Update User Account Profile Picture Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Update User Account Profile Picture Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(publicId -> userProfileService.updateProfilePicture(publicId, pictureName))
@@ -171,7 +185,7 @@ public class AccountResourceHandler {
     public Mono<ServerResponse> updateUserDocument(ServerRequest request)  {
         String pictureName = request.pathVariable("documentName");
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("[{}] Update User Account Document Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Update User Account Document Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(publicId -> userProfileService.updateDocument(publicId, pictureName))

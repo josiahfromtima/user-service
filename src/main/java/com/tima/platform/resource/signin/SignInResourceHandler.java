@@ -22,14 +22,16 @@ import static com.tima.platform.model.api.ApiResponse.buildServerResponse;
 public class SignInResourceHandler {
     private final SignInService signInService;
 
+    private static final String X_FORWARD_FOR = "X-Forwarded-For";
+
     public Mono<ServerResponse> login(ServerRequest request)  {
         String authBasicHeader = request.headers().firstHeader("Authorization");
-        log.info("[{}] Login Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Login Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(signInService.login(new SignInRequest(authBasicHeader)));
     }
     public Mono<ServerResponse> getNewAccessToken(ServerRequest request)  {
         String authRefreshHeader = request.headers().firstHeader("Refresh-Token");
-        log.info("[{}] Refresh Token Requested", request.remoteAddress().orElse(null));
+        log.info("[{}] Refresh Token Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(signInService.getAccessTokenFromRefreshToken(authRefreshHeader));
     }
 

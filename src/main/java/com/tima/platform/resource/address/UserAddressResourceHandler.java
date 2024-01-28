@@ -40,20 +40,22 @@ public class UserAddressResourceHandler {
     @Value("${aws.s3.resource.document}")
     private String documentFolder;
 
+    private static final String X_FORWARD_FOR = "X-Forwarded-For";
+
     /**
      *  This section is the user generated signed URL
      */
     public Mono<ServerResponse> getSignedProfilePicture(ServerRequest request)  {
         String keyName = request.pathVariable("keyName");
         String extension = request.pathVariable("extension");
-        log.info("Get Signed Profile Picture URL Requested ", request.remoteAddress().orElse(null));
+        log.info("Get Signed Profile Picture URL Requested ", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(awsS3Service.getSignedUrl(profileFolder, keyName, extension));
     }
 
     public Mono<ServerResponse> getSignedUserDocument(ServerRequest request)  {
         String keyName = request.pathVariable("keyName");
         String extension = request.pathVariable("extension");
-        log.info("Get Signed Signed Document URL Requested", request.remoteAddress().orElse(null));
+        log.info("Get Signed Signed Document URL Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(awsS3Service.getSignedUrl(documentFolder, keyName, extension));
     }
 
@@ -61,19 +63,19 @@ public class UserAddressResourceHandler {
      *  This section marks the system country activities
      */
     public Mono<ServerResponse> getCountries(ServerRequest request)  {
-        log.info("Get Registered Countries Requested", request.remoteAddress().orElse(null));
+        log.info("Get Registered Countries Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(countryService.getCountries());
     }
 
     public Mono<ServerResponse> getCountry(ServerRequest request)  {
         String name = request.pathVariable("name");
-        log.info("Get Registered Countries Requested", request.remoteAddress().orElse(null));
+        log.info("Get Registered Countries Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(countryService.getCountry(name));
     }
 
     public Mono<ServerResponse> saveNewCountry(ServerRequest request)  {
         Mono<CountryRecord> recordMono = request.bodyToMono(CountryRecord.class).doOnNext(validator::validateEntries);
-        log.info("Registered a new country Requested", request.remoteAddress().orElse(null));
+        log.info("Registered a new country Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return recordMono
                 .map(countryService::createCountry)
                 .flatMap(ApiResponse::buildServerResponse);
@@ -81,7 +83,7 @@ public class UserAddressResourceHandler {
 
     public Mono<ServerResponse> saveCountries(ServerRequest request)  {
         Mono<CountryRecordList> recordMonos = request.bodyToMono(CountryRecordList.class);
-        log.info("Save Multiple Countries Requested", request.remoteAddress().orElse(null));
+        log.info("Save Multiple Countries Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return recordMonos
                 .map(countryRecordList ->
                         countryService.createCountries(countryRecordList.countries()) )
@@ -89,14 +91,14 @@ public class UserAddressResourceHandler {
     }
     public Mono<ServerResponse> updateCountry(ServerRequest request)  {
         Mono<CountryRecord> recordMono = request.bodyToMono(CountryRecord.class);
-        log.info("Update Country Requested", request.remoteAddress().orElse(null));
+        log.info("Update Country Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return recordMono
                 .map(countryService::updateCountries)
                 .flatMap(ApiResponse::buildServerResponse);
     }
     public Mono<ServerResponse> deleteCountry(ServerRequest request)  {
         String name = request.pathVariable("name");
-        log.info("Delete Country Requested", request.remoteAddress().orElse(null));
+        log.info("Delete Country Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(countryService.deleteCountry(CountryRecord.builder().name(name).build()));
     }
 
@@ -106,7 +108,7 @@ public class UserAddressResourceHandler {
     public Mono<ServerResponse> addUserAddress(ServerRequest request)  {
         Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class)
                 .doOnNext(validator::validateEntries);
-        log.info("Add a new user address Requested", request.remoteAddress().orElse(null));
+        log.info("Add a new user address Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return recordMono
                 .map(addressService::addAddress)
                 .flatMap(ApiResponse::buildServerResponse);
@@ -114,7 +116,7 @@ public class UserAddressResourceHandler {
 
     public Mono<ServerResponse> getUserAddress(ServerRequest request)  {
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("Get user address Requested", request.remoteAddress().orElse(null));
+        log.info("Get user address Requested", request.headers().firstHeader(X_FORWARD_FOR));
 
         try {
             return jwtAuthToken
@@ -130,7 +132,7 @@ public class UserAddressResourceHandler {
     public Mono<ServerResponse> updateUserAddress(ServerRequest request)  {
         Mono<AddressRequestRecord> recordMono = request.bodyToMono(AddressRequestRecord.class);
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("Update user address Requested", request.remoteAddress().orElse(null));
+        log.info("Update user address Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(publicId -> recordMono.flatMap(requestRecord ->
@@ -143,7 +145,7 @@ public class UserAddressResourceHandler {
 
     public Mono<ServerResponse> deleteUserAddress(ServerRequest request)  {
         Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
-        log.info("Delete user address Requested", request.remoteAddress().orElse(null));
+        log.info("Delete user address Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return jwtAuthToken
                 .map(ApiResponse::getPublicIdFromToken)
                 .map(addressService::deleteAddress)
@@ -153,7 +155,7 @@ public class UserAddressResourceHandler {
     public Mono<ServerResponse> addUserIndustrySelection(ServerRequest request)  {
         Mono<JsonNode> industries = request.bodyToMono(JsonNode.class);
         String publicId = request.pathVariable("publicId");
-        log.info("Add User Industries Requested", request.remoteAddress().orElse(null), " ", publicId);
+        log.info("Add User Industries Requested", request.headers().firstHeader(X_FORWARD_FOR), " ", publicId);
         return industries
                 .map(jsonNode -> addressService.addUserIndustry(publicId, jsonNode))
                 .flatMap(ApiResponse::buildServerResponse);

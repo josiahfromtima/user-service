@@ -12,7 +12,7 @@ import java.time.Instant;
  * @Date: 12/6/23
  */
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record UserProfileRecord (String firstName, String middleName, String lastName, String email,
                                  String phoneNumber, UserType userType, String companyName, String website,
                                  String language, String profilePicture, String registeredDocument,

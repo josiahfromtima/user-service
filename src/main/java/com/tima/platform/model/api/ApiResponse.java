@@ -1,6 +1,7 @@
 package com.tima.platform.model.api;
 
 import com.tima.platform.model.api.request.PasswordUpdateRecord;
+import com.tima.platform.util.ReportSettings;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -35,5 +36,13 @@ public class ApiResponse {
                 .hash(request.headers().firstHeader("hash"))
                 .salt(request.headers().firstHeader("salt"))
                 .build();
+    }
+
+    public static ReportSettings reportSettings(ServerRequest request) {
+        return ReportSettings.instance()
+                .page(Integer.parseInt(request.queryParam("page").orElse("0")))
+                .size(Integer.parseInt(request.queryParam("size").orElse("10")))
+                .sortIn(request.queryParam("sortIn").orElse("asc"))
+                .sortBy(request.queryParam("sortBy").orElse("createdOn"));
     }
 }

@@ -16,6 +16,7 @@ import com.tima.platform.repository.UserProfileRepository;
 import com.tima.platform.repository.UserRepository;
 import com.tima.platform.util.AppError;
 import com.tima.platform.util.AppUtil;
+import com.tima.platform.util.ReportSettings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ import java.util.Objects;
 
 import static com.tima.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static com.tima.platform.model.security.TimaAuthority.*;
+import static com.tima.platform.util.AppUtil.setPage;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 /**
@@ -53,6 +55,7 @@ public class UserProfileService {
     private static final String INVALID_USER = "Unauthorized User Action";
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
+    private static final String INVALID_USER_TYPE = "Invalid User Type specified";
 
     public Mono<AppResponse> createUserProfile(UserInfluencerRecord userProfile) {
         return checkUserExistence(userProfile.publicId())
@@ -159,6 +162,37 @@ public class UserProfileService {
                 ).map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
+    @PreAuthorize(ADMIN)
+    public Mono<AppResponse> getUserProfiles(ReportSettings settings) {
+        return profileRepository.findAllBy(setPage(settings))
+                .flatMap(profile -> userRepository.findById(getOrDefault(profile.getId()))
+                        .map(user -> FullUserProfileRecord.builder()
+                                .username(user.getUsername())
+                                .publicId(user.getPublicId())
+                                .profile(UserProfileConverter.mapToRecord(profile))
+                                .build()
+                        )
+                ).collectList()
+                .map(profileRecords -> AppUtil.buildAppResponse(profileRecords, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+    }
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
+    public Mono<AppResponse> getUserProfilesByType(String type, ReportSettings settings) {
+        log.info("Getting User Profile by Type {} ", type);
+        UserType userType = parseUserType(type);
+        if(Objects.isNull(userType)) return handleOnErrorResume(new AppException(INVALID_USER_TYPE), BAD_REQUEST.value());
+        return profileRepository.findByUserType(userType, setPage(settings))
+                .flatMap(profile -> userRepository.findById(getOrDefault(profile.getId()))
+                        .map(user -> FullUserProfileRecord.builder()
+                                .username(user.getUsername())
+                                .publicId(user.getPublicId())
+                                .profile(UserProfileConverter.mapToRecord(profile))
+                                .build()
+                        )
+                ).collectList()
+                .map(profileRecords -> AppUtil.buildAppResponse(profileRecords, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+    }
 
     @PreAuthorize(ADMIN_BRAND_INFLUENCER)
     public Mono<AppResponse> updateProfilePicture(String publicId, String pictureName) {
@@ -234,6 +268,14 @@ public class UserProfileService {
     private String checkExt(String file) {
         if(file.contains(".jpeg") || file.contains(".jpg") || file.contains(".png")) return file;
         else return file + defaultFileExtension;
+    }
+
+    private UserType parseUserType(String type) {
+        try {
+            return UserType.valueOf(type);
+        }catch (Exception e) {
+            return null;
+        }
     }
 
     private Integer getOrDefault(Integer id) {

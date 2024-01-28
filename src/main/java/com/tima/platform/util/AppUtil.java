@@ -2,6 +2,9 @@ package com.tima.platform.util;
 
 import com.google.gson.Gson;
 import com.tima.platform.model.api.AppResponse;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.Objects;
 import java.util.Random;
@@ -89,5 +92,10 @@ public class AppUtil {
     }
     public static String getUUID() {
         return UUID.randomUUID().toString();
+    }
+
+    public static Pageable setPage(ReportSettings settings) {
+        return PageRequest.of(settings.getPage(), settings.getSize(),
+                Sort.Direction.fromString(settings.getSortIn()), settings.getSortBy());
     }
 }

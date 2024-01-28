@@ -6,6 +6,7 @@ package com.tima.platform.model.constant;
  * @Date: 12/6/23
  */
 public enum UserType {
+    ADMIN("ADMIN"),
     BRAND("BRAND"),
     INFLUENCER("INFLUENCER");
 
