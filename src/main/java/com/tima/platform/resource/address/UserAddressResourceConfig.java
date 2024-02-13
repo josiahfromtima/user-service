@@ -24,6 +24,7 @@ public class UserAddressResourceConfig {
     public static final String ADDRESS_BASE = API_V1_URL + "/address";
     public static final String PROFILE_PICTURE = SIGNED_URL + "/pics/{keyName}/{extension}";
     public static final String USER_DOCUMENT = SIGNED_URL + "/docs/{keyName}/{extension}";
+    public static final String SETTING_DOCUMENT = SIGNED_URL + "/settings/{keyName}/{extension}";
     public static final String COUNTRY_BY_NAME = COUNTRY_BASE + "/name/{name}";
     public static final String POST_COUNTRY = COUNTRY_BASE ;
     public static final String POST_COUNTRY_LIST = COUNTRY_BASE + "/multiple";
@@ -37,6 +38,7 @@ public class UserAddressResourceConfig {
         return route()
                 .GET(PROFILE_PICTURE, accept(MediaType.APPLICATION_JSON), handler::getSignedProfilePicture)
                 .GET(USER_DOCUMENT, accept(MediaType.APPLICATION_JSON), handler::getSignedUserDocument)
+                .GET(SETTING_DOCUMENT, accept(MediaType.APPLICATION_JSON), handler::getSignedSettingPicture)
                 .GET(COUNTRY_BASE, accept(MediaType.APPLICATION_JSON), handler::getCountries)
                 .GET(COUNTRY_BY_NAME, accept(MediaType.APPLICATION_JSON), handler::getCountry)
                 .GET(GET_ADDRESS, accept(MediaType.APPLICATION_JSON), handler::getUserAddress)

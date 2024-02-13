@@ -46,7 +46,8 @@ public class UserProfileConverter {
                 .language(profile.getLanguage())
                 .profilePicture(profile.getProfilePicture())
                 .registeredDocument(profile.getRegisteredDocument())
-                .notificationSetting((String) profile.getNotificationSetting())
+                .settingBackground(profile.getSettingBackground())
+                .notificationSetting(profile.getNotificationSetting())
                 .build();
     }
 

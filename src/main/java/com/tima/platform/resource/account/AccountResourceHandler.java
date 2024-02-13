@@ -191,4 +191,14 @@ public class AccountResourceHandler {
                 .map(publicId -> userProfileService.updateDocument(publicId, pictureName))
                 .flatMap(ApiResponse::buildServerResponse);
     }
+
+    public Mono<ServerResponse> updateSettingBackground(ServerRequest request)  {
+        String pictureName = request.pathVariable("pictureName");
+        Mono<JwtAuthenticationToken> jwtAuthToken = AuthTokenConfig.authenticatedToken(request);
+        log.info("[{}] Update User Setting Background image Requested", request.headers().firstHeader(X_FORWARD_FOR));
+        return jwtAuthToken
+                .map(ApiResponse::getPublicIdFromToken)
+                .map(publicId -> userProfileService.updateSetting(publicId, pictureName))
+                .flatMap(ApiResponse::buildServerResponse);
+    }
 }

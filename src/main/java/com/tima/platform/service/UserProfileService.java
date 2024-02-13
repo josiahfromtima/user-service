@@ -49,6 +49,8 @@ public class UserProfileService {
     private String profileFolder;
     @Value("${aws.s3.resource.document}")
     private String documentFolder;
+    @Value("${aws.s3.resource.settings}")
+    private String settingsFolder;
     @Value("${aws.s3.image-ext}")
     private String defaultFileExtension;
 
@@ -80,7 +82,7 @@ public class UserProfileService {
 
     public Mono<AppResponse> createUserProfile(UserBrandRecord userProfile) {
         return checkUserExistence(userProfile.publicId())
-                .doOnNext(System.out::println)
+                .doOnNext(user ->  log.info("{}", user))
                 .flatMap(user -> profileRepository.save(UserProfileConverter
                         .mapToEntity(UserProfileRecord.builder()
                                 .companyName(userProfile.companyName())
@@ -149,7 +151,7 @@ public class UserProfileService {
                 ).map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
     }
-    @PreAuthorize(ADMIN)
+    @PreAuthorize(ADMIN_BRAND)
     public Mono<AppResponse> getUserProfileByAdmin(String userPublicId) {
         return userRepository.findByPublicId(userPublicId)
                 .flatMap(user -> getUserProfileFromDB(user.getId())
@@ -213,6 +215,19 @@ public class UserProfileService {
                 .flatMap(user -> getUserProfileFromDB(user.getId()))
                 .flatMap(userProfile -> {
                             userProfile.setRegisteredDocument(resourceUrl(documentName, documentFolder));
+                            return profileRepository.save(userProfile);
+                })
+                .map(UserProfileConverter::mapToRecord)
+                .map(profileRecord -> AppUtil.buildAppResponse(profileRecord, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+    }
+
+    @PreAuthorize(ADMIN_BRAND_INFLUENCER)
+    public Mono<AppResponse> updateSetting(String publicId, String documentName) {
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> getUserProfileFromDB(user.getId()))
+                .flatMap(userProfile -> {
+                            userProfile.setSettingBackground(resourceUrl(documentName, settingsFolder));
                             return profileRepository.save(userProfile);
                 })
                 .map(UserProfileConverter::mapToRecord)

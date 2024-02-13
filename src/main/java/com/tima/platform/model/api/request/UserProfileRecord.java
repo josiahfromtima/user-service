@@ -16,4 +16,5 @@ import java.time.Instant;
 public record UserProfileRecord (String firstName, String middleName, String lastName, String email,
                                  String phoneNumber, UserType userType, String companyName, String website,
                                  String language, String profilePicture, String registeredDocument,
-                                 String notificationSetting, Integer userid, Instant createdOn){}
+                                 String settingBackground, String notificationSetting,
+                                 Integer userid, Instant createdOn){}

@@ -39,24 +39,35 @@ public class UserAddressResourceHandler {
     private String profileFolder;
     @Value("${aws.s3.resource.document}")
     private String documentFolder;
+    @Value("${aws.s3.resource.settings}")
+    private String settingFolder;
 
+    private static final String KEY_NAME = "keyName";
+    private static final String EXTENSION = "extension";
     private static final String X_FORWARD_FOR = "X-Forwarded-For";
 
     /**
      *  This section is the user generated signed URL
      */
     public Mono<ServerResponse> getSignedProfilePicture(ServerRequest request)  {
-        String keyName = request.pathVariable("keyName");
-        String extension = request.pathVariable("extension");
+        String keyName = request.pathVariable(KEY_NAME);
+        String extension = request.pathVariable(EXTENSION);
         log.info("Get Signed Profile Picture URL Requested ", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(awsS3Service.getSignedUrl(profileFolder, keyName, extension));
     }
 
     public Mono<ServerResponse> getSignedUserDocument(ServerRequest request)  {
-        String keyName = request.pathVariable("keyName");
-        String extension = request.pathVariable("extension");
+        String keyName = request.pathVariable(KEY_NAME);
+        String extension = request.pathVariable(EXTENSION);
         log.info("Get Signed Signed Document URL Requested", request.headers().firstHeader(X_FORWARD_FOR));
         return buildServerResponse(awsS3Service.getSignedUrl(documentFolder, keyName, extension));
+    }
+
+    public Mono<ServerResponse> getSignedSettingPicture(ServerRequest request)  {
+        String keyName = request.pathVariable(KEY_NAME);
+        String extension = request.pathVariable(EXTENSION);
+        log.info("Get Signed Setting Picture URL Requested ", request.headers().firstHeader(X_FORWARD_FOR));
+        return buildServerResponse(awsS3Service.getSignedUrl(settingFolder, keyName, extension));
     }
 
     /**

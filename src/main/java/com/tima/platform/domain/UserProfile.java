@@ -39,6 +39,7 @@ public class UserProfile implements Serializable, Persistable<Integer> {
     private String language;
     private String profilePicture;
     private String registeredDocument;
+    private String settingBackground;
     private String notificationSetting;
     private Instant createdOn;
     @Transient

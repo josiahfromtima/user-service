@@ -37,6 +37,7 @@ public class AccountResourceConfig {
     public static final String DE_ACTIVATE_USER = USER_ACCOUNT + "/deactivate";
     public static final String UPDATE_PROFILE_PICS = USER_PROFILE + "/picture/{pictureName}";
     public static final String UPDATE_DOCUMENT = USER_PROFILE + "/document/{documentName}";
+    public static final String UPDATE_SETTING = USER_PROFILE + "/setting/{pictureName}";
 
     @Bean
     public RouterFunction<ServerResponse> profileEndpointHandler(AccountResourceHandler handler) {
@@ -61,6 +62,7 @@ public class AccountResourceConfig {
                 .PUT(UPDATE_PUBLIC_USER_PASSWORD, accept(MediaType.APPLICATION_JSON), handler::updatePublicPassword)
                 .PUT(UPDATE_PROFILE_PICS, accept(MediaType.APPLICATION_JSON), handler::updateProfilePicture)
                 .PUT(UPDATE_DOCUMENT, accept(MediaType.APPLICATION_JSON), handler::updateUserDocument)
+                .PUT(UPDATE_SETTING, accept(MediaType.APPLICATION_JSON), handler::updateSettingBackground)
                 .PUT(RESET_USER_PASSWORD, accept(MediaType.APPLICATION_JSON), handler::passwordReset)
                 .build();
     }
